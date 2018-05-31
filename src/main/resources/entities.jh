@@ -1,0 +1,82 @@
+
+
+
+entity ProduceNew {
+	//request
+	authToken String maxlength(50),
+    timeStamp Instant,
+    customerId String maxlength(100),
+    customerName String maxlength(64),
+    mobilePhone String maxlength(256),
+    email String maxlength(256),
+    businessId String maxlength(64),
+    orderId String maxlength(64),
+    skuCode String maxlength(64),
+    productId String maxlength(64),
+    testFlag Boolean,
+    trialFlag Boolean,
+    expireTime ZonedDateTime,
+    //response
+//    instanceId String maxlength(64),
+}
+
+entity ProduceExtend {
+	//request
+	orderId String maxlength(64),
+//    instanceId String maxlength(64),
+    productId String maxlength(64),
+    expireTime ZonedDateTime,
+    testFlag Boolean,
+    trialToFormal Boolean,
+    timeStamp Instant
+    //response
+}
+
+entity ProduceExpire {
+//request
+	//instanceId String maxlength(64),
+    testFlag Boolean,
+    timeStamp Instant
+//response
+}
+
+entity ProduceRelease{
+//request
+	//instanceId String maxlength(64),
+    testFlag Boolean,
+    timeStamp Instant
+//response
+}
+
+entity Instance {
+
+	appFrontEndUrl String maxlength(512),
+    appAdminUrl String maxlength(512),
+    userName String maxlength(128),
+    password String maxlength(128),
+    expireTime ZonedDateTime,
+    isReleased Boolean,
+    isTrial Boolean,
+    updateTime Instant,
+    resultCode String maxlength(512),
+    resultMsg String maxlength(2000)
+}
+
+relationship ManyToOne {
+	ProduceNew{instance} to Instance,
+    ProduceExtend{instance} to Instance,
+    ProduceExpire{instance} to Instance,
+    ProduceRelease{instance} to Instance
+}
+
+// Set pagination options
+//paginate ProduceNew with infinite-scroll
+//paginate ProduceRelease with pagination
+
+dto * with mapstruct
+
+// Set service options to all except few
+service all with serviceImpl
+//except Employee, Job
+// Set an angular suffix
+// angularSuffix * with mySuffix
