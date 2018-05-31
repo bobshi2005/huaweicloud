@@ -1,8 +1,9 @@
 package com.coderise.saas.huawei.config;
 
-import com.coderise.saas.huawei.security.*;
-import com.coderise.saas.huawei.security.jwt.*;
-
+import com.coderise.saas.huawei.security.AuthoritiesConstants;
+import com.coderise.saas.huawei.security.jwt.JWTConfigurer;
+import com.coderise.saas.huawei.security.jwt.TokenProvider;
+import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,96 +23,110 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.filter.CorsFilter;
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 
-import javax.annotation.PostConstruct;
-
 @Configuration
 @Import(SecurityProblemSupport.class)
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+  private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
-    private final UserDetailsService userDetailsService;
+  private final UserDetailsService userDetailsService;
 
-    private final TokenProvider tokenProvider;
+  private final TokenProvider tokenProvider;
 
-    private final CorsFilter corsFilter;
+  private final CorsFilter corsFilter;
 
-    private final SecurityProblemSupport problemSupport;
+  private final SecurityProblemSupport problemSupport;
 
-    public SecurityConfiguration(AuthenticationManagerBuilder authenticationManagerBuilder, UserDetailsService userDetailsService,TokenProvider tokenProvider,CorsFilter corsFilter, SecurityProblemSupport problemSupport) {
-        this.authenticationManagerBuilder = authenticationManagerBuilder;
-        this.userDetailsService = userDetailsService;
-        this.tokenProvider = tokenProvider;
-        this.corsFilter = corsFilter;
-        this.problemSupport = problemSupport;
+  public SecurityConfiguration(
+      AuthenticationManagerBuilder authenticationManagerBuilder,
+      UserDetailsService userDetailsService,
+      TokenProvider tokenProvider,
+      CorsFilter corsFilter,
+      SecurityProblemSupport problemSupport) {
+    this.authenticationManagerBuilder = authenticationManagerBuilder;
+    this.userDetailsService = userDetailsService;
+    this.tokenProvider = tokenProvider;
+    this.corsFilter = corsFilter;
+    this.problemSupport = problemSupport;
+  }
+
+  @PostConstruct
+  public void init() {
+    try {
+      authenticationManagerBuilder
+          .userDetailsService(userDetailsService)
+          .passwordEncoder(passwordEncoder());
+    } catch (Exception e) {
+      throw new BeanInitializationException("Security configuration failed", e);
     }
+  }
 
-    @PostConstruct
-    public void init() {
-        try {
-            authenticationManagerBuilder
-                .userDetailsService(userDetailsService)
-                .passwordEncoder(passwordEncoder());
-        } catch (Exception e) {
-            throw new BeanInitializationException("Security configuration failed", e);
-        }
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+  @Override
+  public void configure(WebSecurity web) throws Exception {
+    web.ignoring()
+        .antMatchers(HttpMethod.OPTIONS, "/**")
+        .antMatchers("/app/**/*.{js,html}")
+        .antMatchers("/i18n/**")
+        .antMatchers("/content/**")
+        .antMatchers("/swagger-ui/index.html")
+        .antMatchers("/test/**");
+  }
 
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring()
-            .antMatchers(HttpMethod.OPTIONS, "/**")
-            .antMatchers("/app/**/*.{js,html}")
-            .antMatchers("/i18n/**")
-            .antMatchers("/content/**")
-            .antMatchers("/swagger-ui/index.html")
-            .antMatchers("/test/**");
-    }
-
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-            .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling()
-            .authenticationEntryPoint(problemSupport)
-            .accessDeniedHandler(problemSupport)
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    http.addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
+        .exceptionHandling()
+        .authenticationEntryPoint(problemSupport)
+        .accessDeniedHandler(problemSupport)
         .and()
-            .csrf()
-            .disable()
-            .headers()
-            .frameOptions()
-            .disable()
+        .csrf()
+        .disable()
+        .headers()
+        .frameOptions()
+        .disable()
         .and()
-            .sessionManagement()
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
-            .authorizeRequests()
-            .antMatchers("/api/register").permitAll()
-            .antMatchers("/api/activate").permitAll()
-            .antMatchers("/api/authenticate").permitAll()
-            .antMatchers("/api/account/reset-password/init").permitAll()
-            .antMatchers("/api/account/reset-password/finish").permitAll()
-            .antMatchers("/api/profile-info").permitAll()
-            .antMatchers("/api/**").authenticated()
-            .antMatchers("/management/health").permitAll()
-            .antMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
-            .antMatchers("/v2/api-docs/**").permitAll()
-            .antMatchers("/swagger-resources/configuration/ui").permitAll()
-            .antMatchers("/swagger-ui/index.html").hasAuthority(AuthoritiesConstants.ADMIN)
+        .authorizeRequests()
+        .antMatchers("/api/register")
+        .permitAll()
+        .antMatchers("/api/saasproduce")
+        .permitAll()
+        .antMatchers("/api/activate")
+        .permitAll()
+        .antMatchers("/api/authenticate")
+        .permitAll()
+        .antMatchers("/api/account/reset-password/init")
+        .permitAll()
+        .antMatchers("/api/account/reset-password/finish")
+        .permitAll()
+        .antMatchers("/api/profile-info")
+        .permitAll()
+        .antMatchers("/api/**")
+        .authenticated()
+        .antMatchers("/management/health")
+        .permitAll()
+        .antMatchers("/management/**")
+        .hasAuthority(AuthoritiesConstants.ADMIN)
+        .antMatchers("/v2/api-docs/**")
+        .permitAll()
+        .antMatchers("/swagger-resources/configuration/ui")
+        .permitAll()
+        .antMatchers("/swagger-ui/index.html")
+        .hasAuthority(AuthoritiesConstants.ADMIN)
         .and()
-            .apply(securityConfigurerAdapter());
+        .apply(securityConfigurerAdapter());
+  }
 
-    }
-
-    private JWTConfigurer securityConfigurerAdapter() {
-        return new JWTConfigurer(tokenProvider);
-    }
-
+  private JWTConfigurer securityConfigurerAdapter() {
+    return new JWTConfigurer(tokenProvider);
+  }
 }

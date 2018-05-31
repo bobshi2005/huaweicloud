@@ -146,3 +146,10 @@ jhipster:
 # ===================================================================
 
 application:
+    saas-integration:
+        key: b8560db7-3a5f-41e7-bb09-bf99e4c32342
+    user-api:
+        create-user-url: http://upms.kuyun.cn:1111/sso/reg1
+        manage-user-url: http://upms.kuyun.cn:1111/sso/manage1
+        front-url: http://kuyun.coderise.cn:1111/sso/login
+        admin-url: http://kuyun.coderise.cn:1111/sso/login
