@@ -141,3 +141,8 @@ Desktop.ini
 # ESLint
 ######################
 .eslintcache
+
+#####################
+#Prd info
+####################
+src/main/resources/config/application-prod.yml
