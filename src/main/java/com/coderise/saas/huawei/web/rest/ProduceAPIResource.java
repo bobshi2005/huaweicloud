@@ -417,7 +417,7 @@ public class ProduceAPIResource {
     parameter = paramsMap.get("expireTime");
     if (null != parameter && parameter.length == 1) {
       try {
-        newDTO.setExpireTime(ZonedDateTime.from(FORMATTER.parse(parameter[0])));
+        newDTO.setExpireTime(ZonedDateTime.from(FORMATTER_yyyyMMddHHmmss.parse(parameter[0])));
       } catch (Exception e) {
         log.error("get expiredTime error", e);
       }
